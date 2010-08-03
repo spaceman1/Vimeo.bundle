@@ -1,7 +1,4 @@
 import re, string
-from PMS import *
-from PMS.Objects import *
-from PMS.Shortcuts import *
 
 VIMEO_PREFIX      = "/video/vimeo"
 CACHE_INTERVAL    = 1800
