@@ -10,7 +10,7 @@ VIMEO_URL         = 'http://www.vimeo.com/'
 VIMEO_LOAD_CLIP   = 'http://www.vimeo.com/moogaloop/load/clip:%s/local?param_md5=0&param_context_id=&param_force_embed=0&param_clip_id=3715286&param_show_portrait=0&param_multimoog=&param_server=vimeo.com&param_show_title=0&param_color=00ADEF&param_autoplay=0&param_show_byline=0&param_fullscreen=1&param_context=subscriptions|newest&param_force_info=undefined&context=subscriptions'
 VIMEO_PLAY_CLIP   = 'http://www.vimeo.com/moogaloop/play/clip:%s/%s/%s/?q=%s&type=local'
 VIMEO_DIRECTORY   = 'http://vimeo.com/%s/%s/page:%d'
-VIMEO_SEARCH      = 'http://vimeo.com/videos/search:%s/page:%d/sort:plays/format:detail'
+VIMEO_SEARCH      = 'http://vimeo.com/videos/search:%s/%s/page:%d/sort:plays/format:detail'
 
 ####################################################################################################
 def Start():
@@ -191,7 +191,12 @@ def GetDirectory(sender, category=None, noun=None, url=None, page=1, sort='subsc
 def Search(sender, query, page=1):
   dir = MediaContainer(viewGroup='Details', title2='Search Results', replaceParent=(page>1))
   query = query.replace(' ', '+')
-  for result in XML.ElementFromURL(VIMEO_SEARCH % (query, page), True).xpath('//div[@class="item last"]'):
+  
+  # Need to get the security token.
+  vimeo_page = XML.ElementFromURL(VIMEO_URL, True)
+  security_token = vimeo_page.xpath('//input[@id="xsrft"]')[0].get('value')[0:8]
+  
+  for result in XML.ElementFromURL(VIMEO_SEARCH % (query, security_token, page), True, headers={"Cookie" : "searchtoken="+security_token}).xpath('//div[@class="item last"]'):
     title = result.xpath('div/div[@class="title"]/a')[0].text
     subtitle_items = [e.strip() for e in result.xpath('div/div[@class="date"]')[0].itertext()]
     subtitle = "%s (%s plays)" % (subtitle_items[0], subtitle_items[2])
