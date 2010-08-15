@@ -252,9 +252,16 @@ def PlayVideo(sender, id):
 
 ####################################################################################################
 def Login():
+  xsrft = XML.ElementFromURL('http://www.vimeo.com/log_in', isHTML=True).xpath('//input[@id="xsrft"]')[0].get('value')
+
   values = {
      'sign_in[email]' : Prefs.Get('email'),
-     'sign_in[password]' : Prefs.Get('password')
+     'sign_in[password]' : Prefs.Get('password'),
+     'token' : xsrft
   }
 
-  x = HTTP.Request("http://www.vimeo.com/log_in", values)
+  headers = {
+     'Cookie' : 'xsrft=' + xsrft
+  }
+
+  x = HTTP.Request('http://www.vimeo.com/log_in', values, headers)
