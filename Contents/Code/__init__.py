@@ -18,7 +18,7 @@ def Start():
   MediaContainer.content = 'Items'
   MediaContainer.art = R('art-default.png')
   DirectoryItem.thumb = R('icon-default.jpg')
-  HTTP.SetCacheTime(CACHE_INTERVAL)
+  HTTP.CacheTime = CACHE_INTERVAL
 
 ####################################################################################################
 def UpdateCache():
@@ -44,18 +44,18 @@ def GetMyStuff(sender):
   dir = MediaContainer()
 
   # See if we have any creds stored.
-  if not Prefs.Get('email') and not Prefs.Get('password'):
+  if not Prefs['email'] and not Prefs['password']:
     return MessageContainer(header='Logging in', message='Please enter your email and password in the preferences.')
 
   # See if we need to log in.
-  xml = XML.ElementFromURL(VIMEO_URL + 'subscriptions/channels/sort:name', True, cacheTime=0)
+  xml = HTML.ElementFromURL(VIMEO_URL + 'subscriptions/channels/sort:name', cacheTime=0)
   if xml.xpath('//title')[0].text != 'Your subscriptions on Vimeo':
     Login()
 
   Log(xml.xpath('//title')[0].text)
 
   # Now check to see if we're logged in.
-  xml = XML.ElementFromURL(VIMEO_URL + 'subscriptions/channels/sort:name', True, cacheTime=0)
+  xml = HTML.ElementFromURL(VIMEO_URL + 'subscriptions/channels/sort:name', cacheTime=0)
   if xml.xpath('//title')[0].text != 'Your subscriptions on Vimeo':
     return MessageContainer(header='Error logging in', message='Check your email and password in the preferences.')
   else:
@@ -82,7 +82,7 @@ def GetContacts(sender, url):
   dir = MediaContainer(viewGroup='Details', title2=sender.itemTitle)
 
   url += '/sort:name'
-  for contact in XML.ElementFromURL(VIMEO_URL + url, True).xpath('//div[@class="contact"]'):
+  for contact in HTML.ElementFromURL(VIMEO_URL + url).xpath('//div[@class="contact"]'):
     thumb = contact.find('img').get('src')
     title = contact.xpath('div[@class="deleter"]')[0].xpath('span[@class="greyd"]')[0].text
 
@@ -109,7 +109,7 @@ def GetContacts(sender, url):
 ####################################################################################################
 def FeaturedChannels(sender):
   dir = MediaContainer(title2='Featured Channels')
-  for c in XML.ElementFromURL(VIMEO_URL + 'channels', True).xpath("//div[@class='badge']"):
+  for c in HTML.ElementFromURL(VIMEO_URL + 'channels').xpath("//div[@class='badge']"):
     title = c.find('a').get('title')
     thumb = re.findall("'(.*)'", c.get('style'))[0]
     url = c.find('a').get('href')
@@ -120,7 +120,7 @@ def FeaturedChannels(sender):
 ####################################################################################################
 def Categories(sender, noun, url, sort='subscribed'):
   dir = MediaContainer(viewGroup='Details', title2='Channels')
-  for category in XML.ElementFromURL(VIMEO_URL + 'channels', True).xpath('//div[@id="cloud"]/ul/li'):
+  for category in HTML.ElementFromURL(VIMEO_URL + 'channels').xpath('//div[@id="cloud"]/ul/li'):
     title = string.capwords(category.find('a').text)
     subtitle = category.find('span').text + ' ' + noun
     cat = category.find('a').get('href')
@@ -162,7 +162,7 @@ def GetDirectory(sender, category=None, noun=None, url=None, page=1, sort='subsc
     xp_desc = 'div/div[@class="description"]'
     full_subtitle = False
 
-  for channel in XML.ElementFromURL(the_url, True).xpath(xpath):
+  for channel in HTML.ElementFromURL(the_url).xpath(xpath):
     title = channel.xpath(xp_title)[0].text
     subtitle_items = [e for e in channel.xpath(xp_subtitle)[0].itertext()]
     subtitle = "".join(subtitle_items[0:1]).strip()
@@ -185,10 +185,10 @@ def Search(sender, query, page=1):
   query = query.replace(' ', '+')
   
   # Need to get the security token.
-  vimeo_page = XML.ElementFromURL(VIMEO_URL, True)
+  vimeo_page = HTML.ElementFromURL(VIMEO_URL)
   security_token = vimeo_page.xpath('//input[@id="xsrft"]')[0].get('value')[0:8]
   
-  for result in XML.ElementFromURL(VIMEO_SEARCH % (query, security_token, page), True, headers={"Cookie" : "searchtoken="+security_token}).xpath('//div[@class="item last"]'):
+  for result in HTML.ElementFromURL(VIMEO_SEARCH % (query, security_token, page), headers={"Cookie" : "searchtoken="+security_token}).xpath('//div[@class="item last"]'):
     title = result.xpath('div/div[@class="title"]/a')[0].text
     subtitle_items = [e.strip() for e in result.xpath('div/div[@class="date"]')[0].itertext()]
     subtitle = "%s (%s plays)" % (subtitle_items[0], subtitle_items[2])
@@ -318,7 +318,7 @@ def PlayVideo(sender, id):
   request_signature = video.xpath('//request_signature')[0].text
   request_signature_expires = video.xpath('//request_signature_expires')[0].text
 
-  if (Prefs.Get('hd') == True or Prefs.Get('hd') == 'true') and isHD == '1':
+  if Prefs['hd'] == True and isHD == '1':
     format = 'hd'
   else:
     format = 'sd'
@@ -327,11 +327,11 @@ def PlayVideo(sender, id):
 
 ####################################################################################################
 def Login():
-  xsrft = XML.ElementFromURL('http://www.vimeo.com/log_in', isHTML=True).xpath('//input[@id="xsrft"]')[0].get('value')
+  xsrft = HTML.ElementFromURL('http://www.vimeo.com/log_in', cacheTime=0).xpath('//input[@id="xsrft"]')[0].get('value')
 
   values = {
-     'sign_in[email]' : Prefs.Get('email'),
-     'sign_in[password]' : Prefs.Get('password'),
+     'sign_in[email]' : Prefs['email'],
+     'sign_in[password]' : Prefs['password'],
      'token' : xsrft
   }
 
