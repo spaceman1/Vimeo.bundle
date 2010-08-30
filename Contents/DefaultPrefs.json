@@ -1,0 +1,23 @@
+[
+  {
+    "id":"email",
+    "type":"text",
+    "label":"Email",
+    "default":"",
+  },
+  
+  {
+    "id":"password",
+    "type":"text",
+    "option":"hidden",
+    "label":"Password",
+    "default":"",
+  },
+
+  {
+    "id":"hd",
+    "type":"bool",
+    "label":"Play higher definition videos (requires login)",
+    "default":"false",
+  },  
+]
