@@ -87,7 +87,10 @@ def GetContacts(sender, url):
     title = contact.xpath('div[@class="deleter"]')[0].xpath('span[@class="greyd"]')[0].text
 
     info = contact.xpath('div/div[@class="info"]')[0]
-    subtitle = info.xpath('div[@class="location"]')[0].text + "\n"
+    try:
+      subtitle = info.xpath('div[@class="location"]')[0].text + "\n"
+    except:
+      subtitle = ""
     subtitle += info.xpath('div[@class="date"]')[0].text
 
     summary = '\n'
