@@ -22,9 +22,9 @@ def Start():
 
 ####################################################################################################
 def UpdateCache():
-  HTTP.Request(VIMEO_URL+'channels')
-  HTTP.Request(VIMEO_URL+'channels/hd/videos/rss')
-  HTTP.Request(VIMEO_URL+'channels/staffpicks/videos/rss')
+  HTTP.Request(VIMEO_URL+'channels').content
+  HTTP.Request(VIMEO_URL+'channels/hd/videos/rss').content
+  HTTP.Request(VIMEO_URL+'channels/staffpicks/videos/rss').content
 
 ####################################################################################################
 def MainMenu():
@@ -339,4 +339,4 @@ def Login():
      'Cookie' : 'xsrft=' + xsrft
   }
 
-  x = HTTP.Request('http://www.vimeo.com/log_in', values, headers)
+  x = HTTP.Request('http://www.vimeo.com/log_in', values, headers).content
