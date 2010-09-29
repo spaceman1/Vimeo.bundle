@@ -4,6 +4,7 @@
     "type":"text",
     "label":"Email",
     "default":"",
+    "secure":"true"
   },
   
   {
@@ -12,12 +13,13 @@
     "option":"hidden",
     "label":"Password",
     "default":"",
+    "secure":"true"
   },
 
   {
     "id":"hd",
     "type":"bool",
     "label":"Play higher definition videos (requires login)",
-    "default":"false",
-  },  
+    "default":"false"
+  }
 ]
