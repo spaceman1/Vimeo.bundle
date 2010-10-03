@@ -214,7 +214,7 @@ def StripTags(str):
 
 ####################################################################################################
 def GetVideosRSS(sender, name, title2):
-  cookies = HTTP.GetCookiesForURL(VIMEO_URL)
+  #cookies = HTTP.GetCookiesForURL(VIMEO_URL)
 
   direct = False
   direct_high = False
@@ -238,7 +238,7 @@ def GetVideosRSS(sender, name, title2):
     direct = True
     print "Direct"
   
-  dir = MediaContainer(viewGroup='Details', title2=title2, httpCookies=cookies)
+  dir = MediaContainer(viewGroup='Details', title2=title2) #httpCookies=cookies
   for video in XML.ElementFromURL(VIMEO_URL + name + '/rss', errors="ignore").xpath('//item', namespaces=VIMEO_NAMESPACE):
     title = video.find('title').text
     date = Datetime.ParseDate(video.find('pubDate').text).strftime('%a %b %d, %Y')
