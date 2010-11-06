@@ -43,37 +43,36 @@ def MainMenu():
 def GetMyStuff(sender):
   dir = MediaContainer()
 
-  # See if we have any creds stored.
-  if not Prefs['email'] and not Prefs['password']:
-    return MessageContainer(header='Logging in', message='Please enter your email and password in the preferences.')
-
   # See if we need to log in.
   xml = HTML.ElementFromURL(VIMEO_URL + 'subscriptions/channels/sort:name', cacheTime=0)
   if xml.xpath('//title')[0].text != 'Your subscriptions on Vimeo':
+    # See if we have any creds stored.
+    if not Prefs['email'] and not Prefs['password']:
+      return MessageContainer(header='Logging in', message='Please enter your email and password in the preferences.')
+    # Try to log in
     Login()
+    Log(xml.xpath('//title')[0].text)
+    # Now check to see if we're logged in.
+    xml = HTML.ElementFromURL(VIMEO_URL + 'subscriptions/channels/sort:name', cacheTime=0)
+    if xml.xpath('//title')[0].text != 'Your subscriptions on Vimeo':
+      return MessageContainer(header='Error logging in', message='Check your email and password in the preferences.')
 
-  Log(xml.xpath('//title')[0].text)
 
-  # Now check to see if we're logged in.
-  xml = HTML.ElementFromURL(VIMEO_URL + 'subscriptions/channels/sort:name', cacheTime=0)
-  if xml.xpath('//title')[0].text != 'Your subscriptions on Vimeo':
-    return MessageContainer(header='Error logging in', message='Check your email and password in the preferences.')
-  else:
-    for item in xml.xpath('//li[@class="firstborn"]/ul/li/a'):
-      if item.find('span') is not None:
-        url = item.get('href')
-        Log(url)
-        junk, noun, link = url.split('/')
-        title = item.text# + item.find('span').text
-        if item.text.strip() == 'My Likes':
-          dir.Append(Function(DirectoryItem(GetVideosRSS, title), name=item.get('href')[1:], title2="My Likes"))
-        elif item.text.strip() == 'My Groups':
-          dir.Append(Function(DirectoryItem(GetDirectory, title), noun=noun, url=link, sort='name', narrow='joined'))
-        elif item.text.strip() == 'My Channels':
-          dir.Append(Function(DirectoryItem(GetDirectory, title), noun=noun, url=link, sort='name', narrow='subscribe'))
-        elif item.text.strip() == 'My Videos':
-          dir.Append(Function(DirectoryItem(GetVideosRSS, title), name=item.get('href')[1:], title2='My Videos'))
-          dir.Append(Function(DirectoryItem(GetContacts, "My Contacts"), url=item.get('href').replace('videos', 'contacts')))
+  for item in xml.xpath('//li[@class="firstborn"]/ul/li/a'):
+    if item.find('span') is not None:
+      url = item.get('href')
+      Log(url)
+      junk, noun, link = url.split('/')
+      title = item.text# + item.find('span').text
+      if item.text.strip() == 'My Likes':
+        dir.Append(Function(DirectoryItem(GetVideosRSS, title), name=item.get('href')[1:], title2="My Likes"))
+      elif item.text.strip() == 'My Groups':
+        dir.Append(Function(DirectoryItem(GetDirectory, title), noun=noun, url=link, sort='name', narrow='joined'))
+      elif item.text.strip() == 'My Channels':
+        dir.Append(Function(DirectoryItem(GetDirectory, title), noun=noun, url=link, sort='name', narrow='subscribe'))
+      elif item.text.strip() == 'My Videos':
+        dir.Append(Function(DirectoryItem(GetVideosRSS, title), name=item.get('href')[1:], title2='My Videos'))
+        dir.Append(Function(DirectoryItem(GetContacts, "My Contacts"), url=item.get('href').replace('videos', 'contacts')))
 
   return dir
 
