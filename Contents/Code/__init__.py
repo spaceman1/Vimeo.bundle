@@ -60,10 +60,10 @@ def GetMyStuff(sender):
     return MessageContainer(header='Error logging in', message='Check your email and password in the preferences.')
   else:
     for item in xml.xpath('//li[@class="firstborn"]/ul/li/a'):
-      url = item.get('href')
-      Log(url)
-      junk, noun, link = url.split('/')
       if item.find('span') is not None:
+        url = item.get('href')
+        Log(url)
+        junk, noun, link = url.split('/')
         title = item.text# + item.find('span').text
         if item.text.strip() == 'My Likes':
           dir.Append(Function(DirectoryItem(GetVideosRSS, title), name=item.get('href')[1:], title2="My Likes"))
