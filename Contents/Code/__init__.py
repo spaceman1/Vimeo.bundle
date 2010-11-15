@@ -37,8 +37,11 @@ def MainMenu():
   dir.Append(Function(DirectoryItem(Categories,       title=L("Groups"), thumb=R('groups.png')), noun='groups', url='all', sort='members'))
   dir.Append(Function(SearchDirectoryItem(Search,     title=L("Search"), prompt=L("Search for Videos"), thumb=R('search.png'))))
   dir.Append(PrefsItem(L("Preferences..."), thumb=R('prefs.png')))
+  dir.Append(Function(DirectoryItem(Logout, title=L("Logout"))))
   return dir
 
+def Logout(sender):
+  HTTP.Request(VIMEO_URL+'log_out').content
 ####################################################################################################
 def GetMyStuff(sender):
   dir = MediaContainer()
