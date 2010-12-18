@@ -57,7 +57,7 @@ def GetMyStuff(sender):
     if xml.xpath('//title')[0].text != 'Your subscriptions on Vimeo':
       return MessageContainer(header='Error logging in', message='Check your email and password in the preferences.')
 
-
+  userUrl = None
   for item in xml.xpath('//li[@class="firstborn"]/ul/li/a'):
     if item.find('span') is not None:
       url = item.get('href')
@@ -65,7 +65,8 @@ def GetMyStuff(sender):
       junk, noun, link = url.split('/')
       title = item.text# + item.find('span').text
       if item.text.strip() == 'My Likes':
-        dir.Append(Function(DirectoryItem(GetVideosRSS, title), name=item.get('href')[1:], title2="My Likes"))
+        userUrl = name=item.get('href')[1:]
+        dir.Append(Function(DirectoryItem(GetVideosRSS, title), name=userUrl, title2="My Likes"))
       elif item.text.strip() == 'My Groups':
         dir.Append(Function(DirectoryItem(GetDirectory, title), noun=noun, url=link, sort='name', narrow='joined'))
       elif item.text.strip() == 'My Channels':
@@ -73,6 +74,8 @@ def GetMyStuff(sender):
       elif item.text.strip() == 'My Videos':
         dir.Append(Function(DirectoryItem(GetVideosRSS, title), name=item.get('href')[1:], title2='My Videos'))
         dir.Append(Function(DirectoryItem(GetContacts, "My Contacts"), url=item.get('href').replace('videos', 'contacts')))
+    
+  dir.Append(Function(DirectoryItem(GetVideosRSS, 'My Subscriptions'), name=userUrl.replace('likes','subscriptions/videos'), title2='My Subscriptions'))
 
   return dir
 
