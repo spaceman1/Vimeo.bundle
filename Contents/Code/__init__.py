@@ -213,7 +213,7 @@ def StripTags(str):
 
 ####################################################################################################
 def GetVideosRSS(sender, name, title2):
-  #cookies = HTTP.GetCookiesForURL(VIMEO_URL)
+  cookies = HTTP.GetCookiesForURL(VIMEO_URL)
 
   direct = False
   direct_high = False
@@ -237,7 +237,7 @@ def GetVideosRSS(sender, name, title2):
     direct = True
     print "Direct"
   
-  dir = MediaContainer(viewGroup='Details', title2=title2) #httpCookies=cookies
+  dir = MediaContainer(viewGroup='Details', title2=title2, httpCookies=cookies)
   for video in XML.ElementFromURL(VIMEO_URL + name + '/rss', errors="ignore").xpath('//item', namespaces=VIMEO_NAMESPACE):
     title = video.find('title').text
     date = Datetime.ParseDate(video.find('pubDate').text).strftime('%a %b %d, %Y')
@@ -256,7 +256,7 @@ def GetVideosRSS(sender, name, title2):
 
 import urllib2, httplib
 class SmartRedirectHandler(urllib2.HTTPRedirectHandler):     
-    def http_error_301(self, req, fp, code, msg, headers):  
+    def http_error_301(self, req, fp, code, msg, headers):
         result = urllib2.HTTPRedirectHandler.http_error_301( 
             self, req, fp, code, msg, headers)              
         result.status = code                                 
@@ -315,17 +315,27 @@ def GetDirectVideo(id, high, sender=None):
 
 ####################################################################################################
 def PlayVideo(sender, id):
-  video = XML.ElementFromURL(VIMEO_LOAD_CLIP % id)
-  isHD = video.xpath('//isHD')[0].text
-  request_signature = video.xpath('//request_signature')[0].text
-  request_signature_expires = video.xpath('//request_signature_expires')[0].text
+  headers = {'User-agent': 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_5; en-us) AppleWebKit/533.18.1 (KHTML, like Gecko) Version/5.0.2 Safari/533.18.5', 'Cookie' : HTTP.GetCookiesForURL(VIMEO_URL) }
+  video = HTTP.Request('http://www.vimeo.com/%s' % id, cacheTime=0, headers=headers).content
 
-  if Prefs['hd'] == True and isHD == '1':
-    format = 'hd'
-  else:
-    format = 'sd'
-
-  return Redirect(VIMEO_PLAY_CLIP % (id, request_signature, request_signature_expires, format))
+  m1 = re.search('"hd":([0-9])', video)
+  m2 = re.search('"signature":"([0-9a-f]+)","timestamp":([0-9]+)', video)
+  
+  if m1 and m2:
+    hd = int(m1.groups()[0])
+    if Prefs['hd'] == True and hd == True:
+      format = 'hd'
+    else:
+      format = 'sd'
+      
+    (sig, time) = m2.groups()
+    headers['Referer'] = 'http://vimeo.com/%s' % id
+    url = 'http://player.vimeo.com/play_redirect?clip_id=%s&sig=%s&time=%s&quality=%s&codecs=H264,VP8,VP6&type=moogaloop_local&embed_location=' % (id, sig, time, format)
+    request = urllib2.Request(url, None, headers)
+    opener = urllib2.build_opener(SmartRedirectHandler)
+    f = opener.open(request)
+    if f.status == 301 or f.status == 302:
+      return Redirect(f.url)
 
 ####################################################################################################
 def Login():

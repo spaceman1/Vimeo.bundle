@@ -19,7 +19,7 @@
   {
     "id":"hd",
     "type":"bool",
-    "label":"Play higher definition videos (requires login)",
-    "default":"false"
+    "label":"Play higher definition videos",
+    "default":"true"
   }
 ]
