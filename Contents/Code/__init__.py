@@ -218,43 +218,40 @@ def StripTags(str):
 def GetVideosRSS(sender, name, title2):
   cookies = HTTP.GetCookiesForURL(VIMEO_URL)
 
-  direct = False
-  direct_high = False
-
-  # Move this somewhere common - unless I missed it.
-  capabilities = {}
-  capabilities['protocols'] = []
-  if CLIENT_CAP_HEADER in Request.Headers:
-    elements = Request.Headers[CLIENT_CAP_HEADER].split(';')
-    for el in elements:
-      name_values = el.split('=')
-      values = name_values[1].split(',')
-      capabilities[name_values[0]] = values
-      
-  # Add a directKey="" which returns an error or a URL (Vimeo mobile videos don't always exist).
-  if 'http-streaming-video-720p' in capabilities['protocols']:
-    direct = True
-    direct_high = True
-    print "High Resolution Direct"
-  elif 'http-streaming-video' in capabilities['protocols']:
-    direct = True
-    print "Direct"
-  
   dir = MediaContainer(viewGroup='Details', title2=title2, httpCookies=cookies)
   for video in XML.ElementFromURL(VIMEO_URL + name + '/rss', errors="ignore").xpath('//item', namespaces=VIMEO_NAMESPACE):
     title = video.find('title').text
     date = Datetime.ParseDate(video.find('pubDate').text).strftime('%a %b %d, %Y')
-    desc = HTML.ElementFromString(video.find('description').text)
+    #desc = HTML.ElementFromString(video.find('description').text)
     try:
       thumb = video.xpath('m:content/m:thumbnail', namespaces=VIMEO_NAMESPACE)[0].get('url')
       key = video.xpath('m:content/m:player', namespaces=VIMEO_NAMESPACE)[0].get('url')
       key = key[key.rfind('=')+1:]
-      directKey = Function(GetDirectVideo, id=key, high=direct_high)
-      directKey = None
       summary = StripTags(video.find('description').text)
-      dir.Append(Function(VideoItem(PlayVideo, title, date, summary, thumb=thumb, keyDirect=directKey), id=key))
+      
+      dir.Append(
+        VideoItem(
+          title = title,
+          subtitle = date,
+          summary = summary,
+          thumb = thumb,
+          items = [
+            MediaItem(
+              parts = [MediaPart(Function(PlayVideo, id=key))]
+            ),
+            MediaItem(
+              parts = [MediaPart(Function(PlayVideo, id=key, format='hd', codecs='H264'))],
+              protocols = [Protocol.HTTPStreamingVideo720p]
+            ),
+            MediaItem(
+              parts = [MediaPart(Function(PlayVideo, id=key, format='mobile', codecs=None))],
+              protocols = [Protocol.HTTPStreamingVideo]
+            ),
+          ]
+        ))
+  
     except:
-      pass
+      Log.Exception("Error appending video")
   return dir
 
 import urllib2, httplib
@@ -271,53 +268,10 @@ class SmartRedirectHandler(urllib2.HTTPRedirectHandler):
         result.status = code                                
         return result
 
-def GetMediaUrl(id, hd=True):
-  headers = {'User-agent': 'AppleCoreMedia/1.0.0.10F569 (iPad; U; CPU OS 10_6_4 like Mac OS X)'}
-  url = "http://www.vimeo.com/play_redirect?quality=%s&codecs=H264&clip_id=%s" % ('hd' if hd else 'sd', id)
-  
-  try:
-    print "Trying:", url
-    request = urllib2.Request(url, None, headers)
-    opener = urllib2.build_opener(SmartRedirectHandler)
-    f = opener.open(request)
-    if f.status == 301 or f.status == 302:
-      return f.url
-  except:
-    pass
-    
-  return None
+
 
 ####################################################################################################
-def GetDirectVideo(id, high, sender=None):
-
-  dir = MediaContainer()
-  dir.art = dir.content = dir.noHistory = dir.replaceParent = dir.title1 = None
-
-  #
-  # iPad HD video:
-  #    $ curl --verbose "http://www.vimeo.com/play_redirect?quality=hd&codecs=H264&clip_id=13576492" --header "User-Agent: AppleCoreMedia/1.0.0.10F569 (iPad; U; CPU OS 10_6_4 like Mac OS X)"
-  #
-  # iPhone low-resolution video:
-  #
-  # Tries direct stream - fails.
-  # Needs to transcode - on which stream???
-  #    <Media direct="1" key="...." />
-  #    <Media key="" />
-  #
-  #    $ curl --verbose "http://www.vimeo.com/play_redirect?quality=mobile&clip_id=13576492" --header "Referer: http://www.vimeo.com/m/"
-  #
-  url = GetMediaUrl(id, high)
-  if not url and high == True:
-    url = GetMediaUrl(id, False)
-
-  if url:
-    print "Got URL:", url
-    dir.Append(VideoItem(url, None, None, None))
-
-  return dir
-
-####################################################################################################
-def PlayVideo(sender, id):
+def PlayVideo(sender, id, format=None, codecs='H264,VP8,VP6'):
   headers = {'User-agent': 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_5; en-us) AppleWebKit/533.18.1 (KHTML, like Gecko) Version/5.0.2 Safari/533.18.5', 'Cookie' : HTTP.GetCookiesForURL(VIMEO_URL) }
   video = HTTP.Request('http://www.vimeo.com/%s' % id, cacheTime=0, headers=headers).content
 
@@ -326,14 +280,22 @@ def PlayVideo(sender, id):
   
   if m1 and m2:
     hd = int(m1.groups()[0])
-    if Prefs['hd'] == True and hd == True:
-      format = 'hd'
+
+    if format == None:
+      if Prefs['hd'] == True and hd == True:
+        format = 'hd'
+      else:
+        format = 'sd'
+      
+    if codecs != None:
+      codecs = '&codecs=' + codecs
     else:
-      format = 'sd'
+      codecs = ''
       
     (sig, time) = m2.groups()
     headers['Referer'] = 'http://vimeo.com/%s' % id
-    url = 'http://player.vimeo.com/play_redirect?clip_id=%s&sig=%s&time=%s&quality=%s&codecs=H264,VP8,VP6&type=moogaloop_local&embed_location=' % (id, sig, time, format)
+    url = 'http://player.vimeo.com/play_redirect?clip_id=%s&sig=%s&time=%s&quality=%s%s&type=moogaloop_local&embed_location=' % (id, sig, time, format, codecs)
+    
     request = urllib2.Request(url, None, headers)
     opener = urllib2.build_opener(SmartRedirectHandler)
     f = opener.open(request)
