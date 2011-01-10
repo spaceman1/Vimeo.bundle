@@ -7,7 +7,7 @@ VIMEO_URL         = 'http://www.vimeo.com/'
 VIMEO_LOAD_CLIP   = 'http://www.vimeo.com/moogaloop/load/clip:%s/local?param_md5=0&param_context_id=&param_force_embed=0&param_clip_id=3715286&param_show_portrait=0&param_multimoog=&param_server=vimeo.com&param_show_title=0&param_color=00ADEF&param_autoplay=0&param_show_byline=0&param_fullscreen=1&param_context=subscriptions|newest&param_force_info=undefined&context=subscriptions'
 VIMEO_PLAY_CLIP   = 'http://www.vimeo.com/moogaloop/play/clip:%s/%s/%s/?q=%s&type=local'
 VIMEO_DIRECTORY   = 'http://vimeo.com/%s/%s/page:%d'
-VIMEO_SEARCH      = 'http://vimeo.com/videos/search:%s/%s/page:%d/sort:plays/format:detail'
+VIMEO_SEARCH      = 'http://vimeo.com/search/videos/search:%s/%s/page:%d/sort:plays/format:detail'
 CLIENT_CAP_HEADER = 'X-Plex-Client-Capabilities'
 
 ####################################################################################################
@@ -37,6 +37,7 @@ def MainMenu():
   dir.Append(Function(DirectoryItem(Categories,       title=L("Groups"), thumb=R('groups.png')), noun='groups', url='all', sort='members'))
   dir.Append(Function(SearchDirectoryItem(Search,     title=L("Search"), prompt=L("Search for Videos"), thumb=R('search.png'))))
   dir.Append(PrefsItem(L("Preferences..."), thumb=R('prefs.png')))
+  
   return dir
 
 ####################################################################################################
