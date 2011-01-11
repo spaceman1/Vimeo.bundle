@@ -207,8 +207,16 @@ def Search(sender, query, page=1):
     except:
         PMS.Log(XML.StringFromElement(result))
         continue
-    dir.Append(Function(VideoItem(PlayVideo, title, subtitle, desc, thumb=thumb), ext='flv', id=key))
-
+    
+    dir.Append(
+      VideoItem(
+        title = title,
+        subtitle = subtitle,
+        summary = desc,
+        thumb = thumb,
+        items = URLService.MediaItemsForURL('http://www.vimeo.com/' + key)
+      ))
+    
   dir.Append(Function(DirectoryItem(Search, title="More..."), query=query, page=page+1))
   return dir
 
@@ -233,72 +241,12 @@ def GetVideosRSS(sender, name, title2):
           subtitle = date,
           summary = summary,
           thumb = thumb,
-          items = [
-            MediaItem(
-              parts = [MediaPart(Function(PlayVideo, id=key))]
-            ),
-            MediaItem(
-              parts = [MediaPart(Function(PlayVideo, id=key, format='hd', codecs='H264'))],
-              protocols = [Protocol.HTTPStreamingVideo720p]
-            ),
-            MediaItem(
-              parts = [MediaPart(Function(PlayVideo, id=key, format='mobile', codecs=None))],
-              protocols = [Protocol.HTTPStreamingVideo]
-            ),
-          ]
+          items = URLService.MediaItemsForURL('http://www.vimeo.com/' + key)
         ))
   
     except:
       Log.Exception("Error appending video")
   return dir
-
-import urllib2, httplib
-class SmartRedirectHandler(urllib2.HTTPRedirectHandler):     
-    def http_error_301(self, req, fp, code, msg, headers):
-        result = urllib2.HTTPRedirectHandler.http_error_301( 
-            self, req, fp, code, msg, headers)              
-        result.status = code                                 
-        return result                                       
-
-    def http_error_302(self, req, fp, code, msg, headers):   
-        result = urllib2.HTTPRedirectHandler.http_error_302(
-            self, req, fp, code, msg, headers)              
-        result.status = code                                
-        return result
-
-
-
-####################################################################################################
-def PlayVideo(sender, id, format=None, codecs='H264,VP8,VP6'):
-  headers = {'User-agent': 'Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_5; en-us) AppleWebKit/533.18.1 (KHTML, like Gecko) Version/5.0.2 Safari/533.18.5', 'Cookie' : HTTP.GetCookiesForURL(VIMEO_URL) }
-  video = HTTP.Request('http://www.vimeo.com/%s' % id, cacheTime=0, headers=headers).content
-
-  m1 = re.search('"hd":([0-9])', video)
-  m2 = re.search('"signature":"([0-9a-f]+)","timestamp":([0-9]+)', video)
-  
-  if m1 and m2:
-    hd = int(m1.groups()[0])
-
-    if format == None:
-      if Prefs['hd'] == True and hd == True:
-        format = 'hd'
-      else:
-        format = 'sd'
-      
-    if codecs != None:
-      codecs = '&codecs=' + codecs
-    else:
-      codecs = ''
-      
-    (sig, time) = m2.groups()
-    headers['Referer'] = 'http://vimeo.com/%s' % id
-    url = 'http://player.vimeo.com/play_redirect?clip_id=%s&sig=%s&time=%s&quality=%s%s&type=moogaloop_local&embed_location=' % (id, sig, time, format, codecs)
-    
-    request = urllib2.Request(url, None, headers)
-    opener = urllib2.build_opener(SmartRedirectHandler)
-    f = opener.open(request)
-    if f.status == 301 or f.status == 302:
-      return Redirect(f.url)
 
 ####################################################################################################
 def Login():

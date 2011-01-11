@@ -14,12 +14,5 @@
     "label":"Password",
     "default":"",
     "secure":"true"
-  },
-
-  {
-    "id":"hd",
-    "type":"bool",
-    "label":"Play higher definition videos",
-    "default":"true"
   }
 ]
