@@ -212,9 +212,6 @@ def Search(sender, query, page=1):
   dir.Append(Function(DirectoryItem(Search, title="More..."), query=query, page=page+1))
   return dir
 
-def StripTags(str):
-  return re.sub(r'<[^<>]+>', '', str)
-
 ####################################################################################################
 def GetVideosRSS(sender, name, title2):
   cookies = HTTP.GetCookiesForURL(VIMEO_URL)
@@ -223,12 +220,12 @@ def GetVideosRSS(sender, name, title2):
   for video in XML.ElementFromURL(VIMEO_URL + name + '/rss', errors="ignore").xpath('//item', namespaces=VIMEO_NAMESPACE):
     title = video.find('title').text
     date = Datetime.ParseDate(video.find('pubDate').text).strftime('%a %b %d, %Y')
-    #desc = HTML.ElementFromString(video.find('description').text)
+    
     try:
       thumb = video.xpath('m:content/m:thumbnail', namespaces=VIMEO_NAMESPACE)[0].get('url')
       key = video.xpath('m:content/m:player', namespaces=VIMEO_NAMESPACE)[0].get('url')
       key = key[key.rfind('=')+1:]
-      summary = StripTags(video.find('description').text)
+      summary = String.StripTags(video.find('description').text)
       
       dir.Append(
         VideoItem(
