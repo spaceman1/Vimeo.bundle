@@ -242,13 +242,15 @@ def GetVideosRSS(sender, name, title2):
     print "Direct"
   
   dir = MediaContainer(viewGroup='Details', title2=title2, httpCookies=cookies)
-  for video in XML.ElementFromURL(VIMEO_URL + name + '/rss', errors="ignore").xpath('//item', namespaces=VIMEO_NAMESPACE):
+
+  for video in HTML.ElementFromURL(VIMEO_URL + name + '/rss', errors="ignore").xpath('//item', namespaces=VIMEO_NAMESPACE):
     title = video.find('title').text
-    date = Datetime.ParseDate(video.find('pubDate').text).strftime('%a %b %d, %Y')
+    try: date = Datetime.ParseDate(video.xpath('//pubDate')[0].text).strftime('%a %b %d, %Y')
+    except:date = Datetime.ParseDate(video.xpath('//pubdate')[0].text).strftime('%a %b %d, %Y')
     desc = HTML.ElementFromString(video.find('description').text)
     try:
-      thumb = video.xpath('m:content/m:thumbnail', namespaces=VIMEO_NAMESPACE)[0].get('url')
-      key = video.xpath('m:content/m:player', namespaces=VIMEO_NAMESPACE)[0].get('url')
+      thumb = video.xpath('content/thumbnail', namespaces=VIMEO_NAMESPACE)[0].get('url')
+      key = video.xpath('content/player', namespaces=VIMEO_NAMESPACE)[0].get('url')
       key = key[key.rfind('=')+1:]
       directKey = Function(GetDirectVideo, id=key, high=direct_high)
       directKey = None
